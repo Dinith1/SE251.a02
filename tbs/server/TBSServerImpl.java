@@ -14,16 +14,16 @@ import java.util.Map;
 public class TBSServerImpl implements tbs.server.TBSServer {
 	
 	private final Map<Integer, String> errorCodes = new HashMap<Integer, String>() {{
-		put(0, "");
-		put(1, "ERROR: File not found \n");
-		put(2, "ERROR: Incorrect file format \n");
-		put(3, "ERROR: Entered artist name is empty \n");
-		put(4, "ERROR: Artist with same name already exists \n");
-		put(5, "ERROR: Entered act title is empty \n");
-		put(6, "ERROR: Entered artist ID is empty \n");
-		put(7, "ERROR: Entered artist ID does not exist \n");
-		put(8, "ERROR: Entered act duration is invalid (<= 0) \n");
-		put(9, "ERROR: Entered act ID is empty \n");
+		put( 0, "");
+		put( 1, "ERROR: File not found \n");
+		put( 2, "ERROR: Incorrect file format \n");
+		put( 3, "ERROR: Entered artist name is empty \n");
+		put( 4, "ERROR: Artist with same name already exists \n");
+		put( 5, "ERROR: Entered act title is empty \n");
+		put( 6, "ERROR: Entered artist ID is empty \n");
+		put( 7, "ERROR: Entered artist ID does not exist \n");
+		put( 8, "ERROR: Entered act duration is invalid (<= 0) \n");
+		put( 9, "ERROR: Entered act ID is empty \n");
 		put(10, "ERROR: Entered act ID does not exist \n");
 		put(11, "ERROR: Entered theatre ID is empty \n");
 		put(12, "ERROR: Entered theatre ID does not exist \n");
@@ -271,7 +271,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 							
 							// Check if seat is already taken
 							for (int k = 0; k < ticketList.size(); k++) {
-								TBSTicket tempTicket = ticketList.get(i);
+								TBSTicket tempTicket = ticketList.get(k);
 								// This code is reached only if the only possible error is "seat taken"
 								if (performanceID.equals(tempTicket.getPerformanceID()) && (rowNumber == tempTicket.getRowNumber()) && (seatNumber == tempTicket.getSeatNumber())) {
 									return errorCodes.get(27);
@@ -363,7 +363,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 				// Check whether input artistID exists
 				if (artistID.equals(tempArtist.getID())) {
 					for (int j = 0; j < actList.size(); j++) {
-						TBSAct tempAct = actList.get(i);
+						TBSAct tempAct = actList.get(j);
 						// Check which acts belong to the artistID
 						if (artistID.equals(tempAct.getArtistID())) {
 							actIDs.add(tempAct.getID());
@@ -396,7 +396,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 				// Check whether input actID exists
 				if (actID.equals(tempAct.getID())) {
 					for (int j = 0; j < performanceList.size(); j++) {
-						TBSPerformance tempPerformance = performanceList.get(i);
+						TBSPerformance tempPerformance = performanceList.get(j);
 						// Check which performances belong to the actID
 						if (actID.equals(tempPerformance.getActID())) {
 							performanceIDs.add(tempPerformance.getActID());
@@ -429,7 +429,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 				// Check whether input performanceID exists
 				if (performanceID.equals(tempPerformance.getID())) {
 					for (int j = 0; j < ticketList.size(); j++) {
-						TBSTicket tempTicket = ticketList.get(i);
+						TBSTicket tempTicket = ticketList.get(j);
 						// Check which tickets belong to the performanceID
 						if (performanceID.equals(tempTicket.getPerformanceID())) {
 							ticketIDs.add(tempTicket.getID());
@@ -450,8 +450,52 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	
 	
 	public List<String> seatsAvailable(String performanceID) {
-
+		List<String> seatsAvailable = new ArrayList<String>();
+		int errorCode = 0;
 		
+		if (performanceID.equals("") || performanceID.equals(null)) {
+			errorCode = 21;
+		}
+		else {
+			for (int i = 0; i < performanceList.size(); i++) {
+				TBSPerformance tempPerformance = performanceList.get(i);
+				
+				// Check if the input performanceID exists
+				if (performanceID.equals(tempPerformance.getID())) {
+					for (int j = 0; j < theatreList.size(); j++) {
+						TBSTheatre tempTheatre = theatreList.get(j);
+						
+						// Check which theatre the performance is in
+						if (tempPerformance.getTheatreID().equals(tempTheatre.getID())) {
+							int seatingDimension = tempTheatre.getSeatingDimensions();
+							
+							// Iterate through all seats in theatre to check which ones are available
+							for (int row = 1; row <= seatingDimension; row++) {
+								for (int seat = 1; seat <= seatingDimension; seat++) {
+									boolean seatAvaliable = true;
+									
+									for (int k = 0; k < ticketList.size(); k++) {
+										TBSTicket tempTicket = ticketList.get(k);
+										if ((row == tempTicket.getRowNumber()) && (seat == tempTicket.getSeatNumber())) {
+											seatAvaliable = false;
+										}
+									}
+									if (seatAvaliable) {
+										seatsAvailable.add(Integer.toString(row) + "\t" + Integer.toString(seat));
+									}
+								}
+							}
+							return seatsAvailable;
+						}
+					
+					}
+				}
+			}
+			errorCode = 22;
+		}
+		
+		seatsAvailable.add(errorCodes.get(errorCode));
+		return seatsAvailable;
 	}
 
 	
