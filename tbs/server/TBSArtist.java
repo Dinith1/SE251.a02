@@ -6,13 +6,14 @@ public class TBSArtist {
 	
 	TBSArtist(String name) {
 		this.name = name.toLowerCase();
-		this.artistID = "ARTIST_" + name.toUpperCase(); 
-		
+		this.artistID = "ARTIST_" + name; 	
 	}
+	
 	
 	public String getName() {
 		return this.name;
 	}
+	
 	
 	public String getID() {
 		return this.artistID;
