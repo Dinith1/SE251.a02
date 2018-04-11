@@ -517,8 +517,51 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	
 	
 	public List<String> salesReport(String actID) {
-
+		List<String> salesReport = new ArrayList<String>();
+		int errorCode = 0;
 		
+		if (actID.equals("") || actID.equals(null)) {
+			errorCode = 10;
+		}
+		else {
+			// Check that an act with actID exists
+			for (TBSAct tempAct : actList) {
+				if (actID.equals(tempAct.getID())) {
+					
+					// Check which performances belong to actID
+					for (TBSPerformance tempPerformance : performanceList) {
+						if (actID.equals(tempPerformance.getActID())) {
+							
+							// Check which theatre the performance is in to retrieve the seating dimension 
+							for (TBSTheatre tempTheatre : theatreList) {
+								if (tempPerformance.getTheatreID().equals(tempTheatre.getID())) {
+									int seatingDimension = tempTheatre.getSeatingDimensions();
+							
+									// Check which tickets belong to the performance and find the total number of tickets/income
+									int numTickets = 0;
+									int income = 0;
+									for (TBSTicket tempTicket : ticketList) {
+										if (tempPerformance.getID().equals(tempTicket.getPerformanceID())) {
+											numTickets++;
+											income += (tempTicket.getRowNumber() <= seatingDimension) ? tempPerformance.getPremiumPrice() : tempPerformance.getCheapPrice();
+										}
+									}
+									salesReport.add(tempPerformance.getID() + "/t" + tempPerformance.getStartTime() + "\t" + numTickets + "\t" + income);
+									// The performance can only be in one theatre, so break prevents further pointless iteration
+									break;
+								}
+							}
+						}
+					}
+					return salesReport;
+				}
+			 }
+			// This line is reached only if the input actID does not exist
+			errorCode = 11;
+		}
+		
+		salesReport.add(errorCodes.get(errorCode));
+		return salesReport;
 	}
 
 	

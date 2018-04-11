@@ -32,5 +32,20 @@ public class TBSPerformance {
 		return this.theatreID;
 	}
 	
+	
+	public String getStartTime() {
+		return this.startTime;
+	}
+	
+	
+	public int getPremiumPrice() {
+		return this.premiumSeatPrice;
+	}
+	
+	
+	public int getCheapPrice() {
+		return this.cheapSeatPrice;
+	}
+	
 
 }
