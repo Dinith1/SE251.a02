@@ -16,12 +16,14 @@ public class TBSTheatre {
 		return this.theatreID;
 	}
 	
+	
 	public int getSeatingDimensions() {
 		return seatDimension;
 	}
 	
+	
 	public int getFloorArea() {
 		return floorArea;
 	}
-
+	
 }

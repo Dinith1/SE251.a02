@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 public class TBSServerImpl implements tbs.server.TBSServer {
-	
 	private final Map<Integer, String> errorCodes = new HashMap<Integer, String>() {{
 		put( 0, "");
 		put( 1, "ERROR: Entered path is empty \n");
@@ -29,7 +28,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 		put(12, "ERROR: Entered theatre ID is empty \n");
 		put(13, "ERROR: Entered theatre ID does not exist \n");
 		put(14, "ERROR: Entered start time is empty \n");
-		put(15, "ERROR: Entered start time is not in the correct format (yyyy-mm-ddThh:mm) \n");
+		put(15, "ERROR: Entered start time is not in the correct ISO-8601 format (yyyy-mm-ddThh:mm) \n");
 		put(16, "ERROR: Entered premium price is empty \n");
 		put(17, "ERROR: Entered premium price is not in correct format ($d) \n");
 		put(18, "ERROR: Entered premium price is not valid (< 0) \n");
@@ -44,14 +43,12 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 		put(27, "ERROR: Entered seat number is too high \n");
 		put(28, "ERROR: Seat already taken \n");
 	}};
-	
 	private List<TBSTheatre> theatreList = new ArrayList<TBSTheatre>();
 	private List<TBSArtist> artistList = new ArrayList<TBSArtist>();
 	private List<TBSAct> actList = new ArrayList<TBSAct>();
 	private List<TBSPerformance> performanceList = new ArrayList<TBSPerformance>();
 	private List<TBSTicket> ticketList = new ArrayList<TBSTicket>();
 	 
-	
 	
 	public String initialise(String path) {
 		if (path.equals("") || path.equals(null)) {
@@ -79,11 +76,9 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 			buffRead.close();
 		}
 		catch (FileNotFoundException e) {
-				e.printStackTrace();
-				return errorCodes.get(2);
+			return errorCodes.get(2);
 		} 
 		catch (IOException e) {
-			e.printStackTrace();
 			return errorCodes.get(3);
 		}
 		
@@ -92,17 +87,12 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	}
 
 	
-	
 	public String addArtist(String name) {
-		if (name.equals("") || name.equals(null)) {
-			return errorCodes.get(4);
-		}
+		TBSArtist checkArtist = new TBSArtist(name);
+		int errorCode = checkArtist.checkArtistNameError(artistList);
 		
-		for (int i = 0; i < artistList.size(); i++) {
-			TBSArtist tempArtist = artistList.get(i);
-			if (name.toLowerCase().equals(tempArtist.getName())) {
-				return errorCodes.get(5);
-			}
+		if (errorCode != 0) {
+			return errorCodes.get(errorCode);
 		}
 		
 		TBSArtist artist = new TBSArtist(name);
@@ -111,217 +101,82 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	}
 
 	
-	
 	public String addAct(String title, String artistID, int minutesDuration) {
 		int[] errorCode = {0, 0, 0};
+		TBSAct checkAct = new TBSAct(title, artistID, minutesDuration);
 		
-		if (title.equals("") || title.equals(null)) {
-			errorCode[0] = 8;
+		errorCode[0] = (title.equals("") || title.equals(null)) ? 8 : 0;
+		errorCode[1] = checkAct.checkArtistIDError(artistList);
+		errorCode[2] = (minutesDuration <= 0) ? 9 : 0;
+		
+		if ((errorCode[0] != 0) || (errorCode[1] != 0) || (errorCode[2] != 0)) {
+			return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
 		}
 		
-		if (minutesDuration <= 0) {
-			errorCode[2] = 9;
-		}
-		
-		if (artistID.equals("") || artistID.equals(null)) {
-			errorCode[1] = 6;
-		}
-		else {
-			for (int i = 0; i < artistList.size(); i++) {
-				TBSArtist tempArtist = artistList.get(i);
-				if (artistID.equals(tempArtist.getID())) {
-					TBSAct act = new TBSAct(title, artistID, minutesDuration);
-					actList.add(act);
-					return act.getID();
-				}
-			}
-			errorCode[1] = 7;
-		}
-		
-		return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
+		TBSAct act = new TBSAct(title, artistID, minutesDuration);
+		actList.add(act);
+		return act.getID();
 	}
 
 	
-	
 	public String schedulePerformance(String actID, String theatreID, String startTimeStr, String premiumPriceStr, String cheapSeatsStr) {
-		boolean inputErrorExists = false;
-		boolean actIDEmpty = false;
-		boolean actIDExists = false;
-		boolean theatreIDEmpty = false;
-		boolean theatreIDExists = false;
 		int[] errorCode = {0, 0, 0, 0, 0};
+		TBSPerformance checkPerformance = new TBSPerformance(actID, theatreID, startTimeStr, premiumPriceStr, cheapSeatsStr);
 		
-		if (actID.equals("") || actID.equals(null)) {
-			errorCode[0] = 10;
-			inputErrorExists = true;
-			actIDEmpty = true;
-		}
+		errorCode[0] = checkPerformance.checkActIDError(actList);
+		errorCode[1] = checkPerformance.checkTheatreIDError(theatreList);
+		errorCode[2] = checkPerformance.checkStartTimeError();
+		errorCode[3] = checkPerformance.checkPremiumPriceError();
+		errorCode[4] = checkPerformance.checkCheapPriceError();
 		
-		if (theatreID.equals("") || theatreID.equals(null)) {
-			errorCode[1] = 12;
-			inputErrorExists = true;
-			theatreIDEmpty = true;
-		}
-		
-		if (startTimeStr.equals("") || startTimeStr.equals(null)) {
-			errorCode[2] = 14;
-			inputErrorExists = true;
-		}
-		else if (!startTimeStr.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
-			errorCode[2] = 15;
-			inputErrorExists = true;
-		}
-		
-		if (premiumPriceStr.equals("") || premiumPriceStr.equals(null)) {
-			errorCode[3] = 16;
-			inputErrorExists = true;
-		}
-		else if (!premiumPriceStr.matches("\\$\\d+")) {
-			errorCode[3] = 17;
-			inputErrorExists = true;
-		}
-		else if (Integer.parseInt(premiumPriceStr.substring(1, premiumPriceStr.length())) < 0) {
-			errorCode[3] = 18;
-			inputErrorExists = true;
-		}
-		
-		if (cheapSeatsStr.equals("") || cheapSeatsStr.equals(null)) {
-			errorCode[4] = 19;
-			inputErrorExists = true;
-		}
-		else if (!cheapSeatsStr.matches("\\$\\d+")) {
-			errorCode[4] = 20;
-			inputErrorExists = true;
-		}
-		else if (Integer.parseInt(cheapSeatsStr.substring(1, cheapSeatsStr.length())) < 0) {
-			errorCode[4] = 21;
-			inputErrorExists = true;
-		}
-		
-		if (!actIDEmpty) {
-			// Check if there is an act with actID
-			for (int i = 0; i < actList.size(); i++) {
-				TBSAct tempAct = actList.get(i);
-				if (actID.equals(tempAct.getID())) {
-					actIDExists = true;
-					break;
-				}
-			}
-			if (!actIDExists) {
-				errorCode[0] = 11;
-			}
-		}
-		
-		if (!theatreIDEmpty) {
-			// Check if there is a theatre with theatreID
-			for (int i = 0; i < theatreList.size(); i++) {
-				TBSTheatre tempTheatre = theatreList.get(i);
-				if (theatreID.equals(tempTheatre.getID())) {
-					theatreIDExists = true;
-					break;
-				}
-			}
-			if (!theatreIDExists) {
-				errorCode[1] = 13;
-			}
-		}
-		
-		
-		if (inputErrorExists || actIDEmpty || !actIDExists || theatreIDEmpty || !theatreIDExists) {
+		if ((errorCode[0] != 0) || (errorCode[1] != 0) || (errorCode[2] != 0) || (errorCode[3] != 0) || (errorCode[4] != 0) ) {
 			return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]) + errorCodes.get(errorCode[3]) + errorCodes.get(errorCode[4]);
 		}
 		
-		// If there are no input errors then schedule the performance
-		int premiumPrice = Integer.parseInt(premiumPriceStr.substring(1, premiumPriceStr.length()));
-		int cheapPrice = Integer.parseInt(cheapSeatsStr.substring(1, cheapSeatsStr.length()));
-		TBSPerformance performance = new TBSPerformance(actID, theatreID, startTimeStr, premiumPrice, cheapPrice);
+		TBSPerformance performance = new TBSPerformance(actID, theatreID, startTimeStr, premiumPriceStr, cheapSeatsStr);
 		performanceList.add(performance);
 		return performance.getID();
 	}
 	
 	
-	
 	public String issueTicket(String performanceID, int rowNumber, int seatNumber) {
 		int[] errorCode = {0, 0, 0};
+		TBSTicket checkTicket = new TBSTicket(performanceID, rowNumber, seatNumber);
 		
-		if (performanceID.equals("") || performanceID.equals(null)) {
-			errorCode[0] = 22;
-		}
-		
-		if (rowNumber <= 0) {
-			errorCode[1] = 24;
-		}
-		
-		if (seatNumber <= 0) {
-			errorCode[2] = 26;
-		}
+		errorCode[0] = checkTicket.checkPerformanceIDError(performanceList);
+		errorCode[1] = (rowNumber <= 0) ? 24 : 0;
+		errorCode[2] = (seatNumber <= 0) ? 26 : 0;
 		
 		if (errorCode[0] != 0) {
 			return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
 		}
 		
-		// Assume for now the entered performance ID does not exist
-		errorCode[0] = 23;
+		int seatingDimension = checkTicket.findSeatingDimension(performanceList, theatreList);
 		
-		// Check that a performance with the given ID exists and that the row/seat is valid
-		for (int i = 0; i < performanceList.size(); i++) {
-			TBSPerformance tempPerformance = performanceList.get(i);
-			if (performanceID.equals(tempPerformance.getID()) && !(rowNumber <= 0) && !(seatNumber <= 0)) {
-				
-				for (int j = 0; j < theatreList.size(); j++) {
-					TBSTheatre tempTheatre = theatreList.get(j);
-					// Check which theatre the performance is in 
-					if (tempPerformance.getTheatreID().equals(tempTheatre.getID())) {
-						
-						// Check that input row/seat is valid (not greater than the theatre's seating dimension)
-						int seatingDimension = tempTheatre.getSeatingDimensions();
-						if (!(rowNumber > seatingDimension) && !(seatNumber > seatingDimension)) {
-							
-							// Check if seat is already taken
-							for (int k = 0; k < ticketList.size(); k++) {
-								TBSTicket tempTicket = ticketList.get(k);
-								// This code is reached only if the only possible error is "seat taken"
-								if (performanceID.equals(tempTicket.getPerformanceID()) && (rowNumber == tempTicket.getRowNumber()) && (seatNumber == tempTicket.getSeatNumber())) {
-									return errorCodes.get(28);
-								}
-							}
-							
-							// If seat is not taken then there are no other possible errors at this point
-							TBSTicket ticket = new TBSTicket(performanceID, rowNumber, seatNumber);
-							ticketList.add(ticket);
-							return ticket.getID();
-						}
-						else {
-							if (rowNumber > seatingDimension) {
-								errorCode[1] = 25;
-							}
-							if (seatNumber > seatingDimension) {
-								errorCode[2] = 27;
-							}
-							// The performance can only be in one theatre, so the break prevents further pointless iteration
-							break;
-						}
-					}
-				}
-				// The performance can only occur in the performanceList once, so the break prevents further pointless iteration
-				break;
-			}
-			else if (performanceID.equals(tempPerformance.getID())) {
-				errorCode[0] = 0;
-				break;
+		errorCode[1] = (rowNumber > seatingDimension) ? 25 : errorCode[1];
+		errorCode[2] = (seatNumber > seatingDimension) ? 27 : errorCode[2];
+		
+		if ((errorCode[1] != 0) || (errorCode[2] != 0)) {
+			return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
+		}
+		
+		// Check if seat is already taken. This code is reached only if the only possible error is "seat taken"
+		for (TBSTicket tempTicket : ticketList) {
+			if (performanceID.equals(tempTicket.getPerformanceID()) && (rowNumber == tempTicket.getRowNumber()) && (seatNumber == tempTicket.getSeatNumber())) {
+				return errorCodes.get(28);
 			}
 		}
 		
-		return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
+		TBSTicket ticket = new TBSTicket(performanceID, rowNumber, seatNumber);
+		ticketList.add(ticket);
+		return ticket.getID();
 	}
-	
 	
 	
 	public List<String> getTheatreIDs() {
 		List<String> theatreIDs = new ArrayList<String>();
 		
-		for (int i = 0; i < theatreList.size(); i++) {
-			TBSTheatre tempTheatre = theatreList.get(i);
+		for (TBSTheatre tempTheatre : theatreList) {
 			theatreIDs.add(tempTheatre.getID());
 		}
 		
@@ -330,12 +185,10 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	}
 
 	
-	
 	public List<String> getArtistIDs() {
 		List<String> artistIDs = new ArrayList<String>();
 		
-		for (int i = 0; i < artistList.size(); i++) {
-			TBSArtist tempArtist = artistList.get(i);
+		for (TBSArtist tempArtist : artistList) {
 			artistIDs.add(tempArtist.getID());
 		}
 		
@@ -344,12 +197,10 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	}
 
 	
-	
 	public List<String> getArtistNames() {
 		List<String> artistNames = new ArrayList<String>();
 		
-		for (int i = 0; i < artistList.size(); i++) {
-			TBSArtist tempArtist = artistList.get(i);
+		for (TBSArtist tempArtist : artistList) {
 			artistNames.add(tempArtist.getName());
 		}
 		
@@ -358,217 +209,95 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 	}
 
 	
-	
 	public List<String> getActIDsForArtist(String artistID) {
 		List<String> actIDs = new ArrayList<String>();
-		int errorCode = 0;
+		TBSAct checkAct = new TBSAct("foo", artistID, 5);
+		int errorCode = checkAct.checkArtistIDError(artistList);
 		
-		if (artistID.equals("") || artistID.equals(null)) {
-			errorCode = 6;
+		if (errorCode != 0) {
+			actIDs.add(errorCodes.get(errorCode));
+			return actIDs;
 		}
-		else {
-			for (int i = 0; i < artistList.size(); i++) {
-				TBSArtist tempArtist = artistList.get(i);
-				
-				// Check whether an artist with input artistID exists
-				if (artistID.equals(tempArtist.getID())) {
-					for (int j = 0; j < actList.size(); j++) {
-						TBSAct tempAct = actList.get(j);
-						
-						// Check which acts belong to the artistID
-						if (artistID.equals(tempAct.getArtistID())) {
-							actIDs.add(tempAct.getID());
-						}
-					}
-					Collections.sort(actIDs);
-					return actIDs;
-				}
+		
+		for (TBSAct tempAct : actList) {
+			if (artistID.equals(tempAct.getArtistID())) {
+				actIDs.add(tempAct.getID());
 			}
-			// This line is reached only if the input artistID does not exist
-			errorCode = 7;
 		}
-		
-		actIDs.add(errorCodes.get(errorCode));
+		Collections.sort(actIDs);
 		return actIDs;
 	}
 
 	
-	
 	public List<String> getPeformanceIDsForAct(String actID) {
 		List<String> performanceIDs = new ArrayList<String>();
-		int errorCode = 0;
+		TBSPerformance checkPerformance = new TBSPerformance(actID, "foo", "foo", "foo", "foo");
+		int errorCode = checkPerformance.checkActIDError(actList);
 		
-		if (actID.equals("") || actID.equals(null)) {
-			errorCode = 10;
+		if (errorCode != 0) {
+			performanceIDs.add(errorCodes.get(errorCode));
+			return performanceIDs;
 		}
-		else {
-			for (int i = 0; i < actList.size(); i++) {
-				TBSAct tempAct = actList.get(i);
-				
-				// Check whether input actID exists
-				if (actID.equals(tempAct.getID())) {
-					for (int j = 0; j < performanceList.size(); j++) {
-						TBSPerformance tempPerformance = performanceList.get(j);
-						
-						// Check which performances belong to the actID
-						if (actID.equals(tempPerformance.getActID())) {
-							performanceIDs.add(tempPerformance.getActID());
-						}
-					}
-					Collections.sort(performanceIDs);
-					return performanceIDs;
-				}
+		
+		for (TBSPerformance tempPerformance : performanceList) {
+			if (actID.equals(tempPerformance.getActID())) {
+				performanceIDs.add(tempPerformance.getID());
 			}
-			// This line is reached only if the input actID does not exist
-			errorCode = 11;
 		}
-		
-		performanceIDs.add(errorCodes.get(errorCode));
+		Collections.sort(performanceIDs);
 		return performanceIDs;
 	}
 
 	
-	
 	public List<String> getTicketIDsForPerformance(String performanceID) {
 		List<String> ticketIDs = new ArrayList<String>();
-		int errorCode = 0;
+		TBSTicket checkTicket = new TBSTicket(performanceID, 5, 5);
+		int errorCode = checkTicket.checkPerformanceIDError(performanceList);
 		
-		if (performanceID.equals("") || performanceID.equals(null)) {
-			errorCode = 22;
+		if (errorCode != 0) {
+			ticketIDs.add(errorCodes.get(errorCode));
+			return ticketIDs;
 		}
-		else {
-			for (int i = 0; i < ticketList.size(); i++) {
-				TBSPerformance tempPerformance = performanceList.get(i);
-				
-				// Check whether input performanceID exists
-				if (performanceID.equals(tempPerformance.getID())) {
-					for (int j = 0; j < ticketList.size(); j++) {
-						TBSTicket tempTicket = ticketList.get(j);
-						
-						// Check which tickets belong to the performanceID
-						if (performanceID.equals(tempTicket.getPerformanceID())) {
-							ticketIDs.add(tempTicket.getID());
-						}
-					}
-					Collections.sort(ticketIDs);
-					return ticketIDs;
-				}
+		
+		for (TBSTicket tempTicket : ticketList) {
+			if (performanceID.equals(tempTicket.getPerformanceID())) {
+				ticketIDs.add(tempTicket.getID());
 			}
-			// This line is reached only if the input performanceID does not exist
-			errorCode = 23;
 		}
-		
-		ticketIDs.add(errorCodes.get(errorCode));
+		Collections.sort(ticketIDs);
 		return ticketIDs;
 	}
 
 	
-	
 	public List<String> seatsAvailable(String performanceID) {
-		List<String> seatsAvailable = new ArrayList<String>();
-		int errorCode = 0;
+		TBSTicket checkTicket = new TBSTicket(performanceID, 5, 5);
+		int errorCode = checkTicket.checkPerformanceIDError(performanceList);
 		
-		if (performanceID.equals("") || performanceID.equals(null)) {
-			errorCode = 22;
-		}
-		else {
-			for (int i = 0; i < performanceList.size(); i++) {
-				TBSPerformance tempPerformance = performanceList.get(i);
-				
-				// Check if the input performanceID exists
-				if (performanceID.equals(tempPerformance.getID())) {
-					for (int j = 0; j < theatreList.size(); j++) {
-						TBSTheatre tempTheatre = theatreList.get(j);
-						
-						// Check which theatre the performance is in
-						if (tempPerformance.getTheatreID().equals(tempTheatre.getID())) {
-							int seatingDimension = tempTheatre.getSeatingDimensions();
-							
-							// Iterate through all seats in theatre to check which ones are available
-							for (int row = 1; row <= seatingDimension; row++) {
-								for (int seat = 1; seat <= seatingDimension; seat++) {
-									boolean seatAvaliable = true;
-									
-									for (int k = 0; k < ticketList.size(); k++) {
-										TBSTicket tempTicket = ticketList.get(k);
-										if ((row == tempTicket.getRowNumber()) && (seat == tempTicket.getSeatNumber())) {
-											seatAvaliable = false;
-										}
-									}
-									if (seatAvaliable) {
-										seatsAvailable.add(Integer.toString(row) + "\t" + Integer.toString(seat));
-									}
-								}
-							}
-							return seatsAvailable;
-						}
-					
-					}
-				}
-			}
-			// This line is reached only if input performanceID does not exist
-			errorCode = 23;
+		if (errorCode != 0) {
+			List<String> seatsAvailable = new ArrayList<String>();
+			seatsAvailable.add(errorCodes.get(errorCode));
+			return seatsAvailable;
 		}
 		
-		seatsAvailable.add(errorCodes.get(errorCode));
-		return seatsAvailable;
+		return checkTicket.findSeatsAvailable(ticketList, performanceList, theatreList);
 	}
 
-	
 	
 	public List<String> salesReport(String actID) {
-		List<String> salesReport = new ArrayList<String>();
-		int errorCode = 0;
+		TBSPerformance checkPerformance = new TBSPerformance(actID, "foo", "foo", "foo", "foo");
+		int errorCode = checkPerformance.checkActIDError(actList);
 		
-		if (actID.equals("") || actID.equals(null)) {
-			errorCode = 10;
-		}
-		else {
-			// Check that an act with actID exists
-			for (TBSAct tempAct : actList) {
-				if (actID.equals(tempAct.getID())) {
-					
-					// Check which performances belong to actID
-					for (TBSPerformance tempPerformance : performanceList) {
-						if (actID.equals(tempPerformance.getActID())) {
-							
-							// Check which theatre the performance is in to retrieve the seating dimension 
-							for (TBSTheatre tempTheatre : theatreList) {
-								if (tempPerformance.getTheatreID().equals(tempTheatre.getID())) {
-									int seatingDimension = tempTheatre.getSeatingDimensions();
-							
-									// Check which tickets belong to the performance and find the total number of tickets/income
-									int numTickets = 0;
-									int income = 0;
-									for (TBSTicket tempTicket : ticketList) {
-										if (tempPerformance.getID().equals(tempTicket.getPerformanceID())) {
-											numTickets++;
-											income += (tempTicket.getRowNumber() <= seatingDimension) ? tempPerformance.getPremiumPrice() : tempPerformance.getCheapPrice();
-										}
-									}
-									salesReport.add(tempPerformance.getID() + "/t" + tempPerformance.getStartTime() + "\t" + numTickets + "\t" + income);
-									// The performance can only be in one theatre, so break prevents further pointless iteration
-									break;
-								}
-							}
-						}
-					}
-					return salesReport;
-				}
-			 }
-			// This line is reached only if the input actID does not exist
-			errorCode = 11;
+		if (errorCode != 0) {
+			List<String> salesReport = new ArrayList<String>();
+			salesReport.add(errorCodes.get(errorCode));
+			return salesReport;
 		}
 		
-		salesReport.add(errorCodes.get(errorCode));
-		return salesReport;
+		return checkPerformance.createSalesReport(theatreList, performanceList, ticketList);
 	}
 
-	
 	
 	public List<String> dump() {
 		return null;
 	}
-	
-
 }

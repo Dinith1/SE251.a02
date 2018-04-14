@@ -1,5 +1,7 @@
 package tbs.server;
 
+import java.util.List;
+
 public class TBSAct {
 	private String actID;
 	private String title;
@@ -10,23 +12,42 @@ public class TBSAct {
 		this.title = title;
 		this.artistID = artistID;
 		this.duration = minsDuration;
-		this.actID = artistID + "_ACT_" + title;
+		this.actID = "_ACT_" + title + artistID;
 	}
+	
 	
 	public String getID() {
 		return this.actID;
 	}
 	
+	
 	public String getTitle() {
 		return this.title;
 	}
+	
 	
 	public int getDuration() {
 		return this.duration;
 	}
 	
+	
 	public String getArtistID() {
 		return this.artistID;
 	}
+	
+	
+	public int checkArtistIDError(List<TBSArtist> artistList) {
+		if (this.artistID.equals("") || this.artistID.equals(null)) {
+			return 6;
+		}
 
+		for (TBSArtist tempArtist : artistList) {
+			if (this.artistID.equals(tempArtist.getID())) {
+				return 0;
+			}
+		}
+		
+		return 7;
+	}
+	
 }
