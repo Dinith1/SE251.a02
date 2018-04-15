@@ -12,8 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 public class TBSServerImpl implements tbs.server.TBSServer {
-	private final Map<Integer, String> errorCodes = new HashMap<Integer, String>() {{
-		put( 0, "");
+	private final Map<Integer, String> errorCodes = new HashMap<Integer, String>() {
+		private static final long serialVersionUID = -9158006586374589593L;
+	{
+		put( 0, ""); // Indicates no error
 		put( 1, "ERROR: Entered path is empty \n");
 		put( 2, "ERROR: File not found \n");
 		put( 3, "ERROR: Incorrect file format \n");
@@ -151,6 +153,7 @@ public class TBSServerImpl implements tbs.server.TBSServer {
 			return errorCodes.get(errorCode[0]) + errorCodes.get(errorCode[1]) + errorCodes.get(errorCode[2]);
 		}
 		
+		// This code is reached only if the performanceID exists
 		int seatingDimension = checkTicket.findSeatingDimension(performanceList, theatreList);
 		
 		errorCode[1] = (rowNumber > seatingDimension) ? 25 : errorCode[1];

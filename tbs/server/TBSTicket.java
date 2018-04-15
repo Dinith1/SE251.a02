@@ -73,14 +73,12 @@ public class TBSTicket {
 		
 		for (int row = 1; row <= seatingDimension; row++) {
 			for (int seat = 1; seat <= seatingDimension; seat++) {
-				boolean seatAvaliable = true;
+				boolean seatAvailable = true;
 				
 				for (TBSTicket tempTicket : ticketList) {
-					if ((row == tempTicket.getRowNumber()) && (seat == tempTicket.getSeatNumber())) {
-						seatAvaliable = false;
-					}
+					seatAvailable = ((row == tempTicket.getRowNumber()) && (seat == tempTicket.getSeatNumber())) ? false : seatAvailable;
 				}
-				if (seatAvaliable) {
+				if (seatAvailable) {
 					seatsAvailable.add(Integer.toString(row) + "\t" + Integer.toString(seat));
 				}
 			}
