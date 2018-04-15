@@ -137,10 +137,10 @@ public class TBSPerformance {
 				for (TBSTicket tempTicket : ticketList) {
 					if (tempPerformance.getID().equals(tempTicket.getPerformanceID())) {
 						numTickets++;
-						income += (tempTicket.getRowNumber() <= seatingDimension) ? tempPerformance.getPremiumPrice() : tempPerformance.getCheapPrice();
+						income += (tempTicket.getRowNumber() <= seatingDimension / 2) ? tempPerformance.getPremiumPrice() : tempPerformance.getCheapPrice();
 					}
 				}
-				salesReport.add(tempPerformance.getID() + "/t" + tempPerformance.getStartTime() + "\t" + numTickets + "\t" + income);
+				salesReport.add(tempPerformance.getID() + "\t" + tempPerformance.getStartTime() + "\t" + numTickets + "\t$" + income);
 			}
 		}
 		return salesReport;
